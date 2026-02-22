@@ -3,14 +3,20 @@ package logger
 import (
 	"log/slog"
 	"os"
+	"salon/internal/config"
 	"time"
 )
 
-func New() *slog.Logger {
+func New(env config.Env) *slog.Logger {
+	level := slog.LevelDebug
+	if env.IsProduction() {
+		level = slog.LevelError
+	}
+
 	return slog.New(
 		slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 			AddSource:   true,
-			Level:       slog.LevelDebug,
+			Level:       level,
 			ReplaceAttr: formatTimestamp,
 		}),
 	)

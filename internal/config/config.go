@@ -7,6 +7,7 @@ import (
 )
 
 type Config struct {
+	Env      Env    `env:"ENV" envDefault:"development"`
 	Port     string `env:"PORT" envDefault:"2001"`
 	SalonDsn string `env:"SALON_DSN,notEmpty"`
 }
