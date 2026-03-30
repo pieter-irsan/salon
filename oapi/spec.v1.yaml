@@ -1,0 +1,1152 @@
+# ref: learn.openapis.org/specification
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Salon Cashier API
+servers:
+  - url: http://salon.astrono.my.id/api/v1
+
+tags:
+  - name: Auth
+  - name: Orders
+  - name: Workers
+  - name: Services
+  - name: Service Categories
+  - name: Payment Methods
+  - name: Reports
+
+paths:
+
+  # ---------------------------------------------------------------------------
+  # AUTH
+  # Assumption: single-owner app, simple JWT login. No registration endpoint —
+  # owner account is seeded manually.
+  # ---------------------------------------------------------------------------
+  /auth/login:
+    post:
+      summary: Owner login
+      operationId: login
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      operationId: refreshToken
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ---------------------------------------------------------------------------
+  # ORDERS
+  # ---------------------------------------------------------------------------
+  /orders:
+    get:
+      summary: List orders
+      description: >
+        Returns paginated order list. Use `from` and `to` for date range filtering.
+        Defaults to today if no range provided.
+      operationId: listOrders
+      tags: [Orders]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/FromParam'
+        - $ref: '#/components/parameters/ToParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Order'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Create order
+      description: >
+        Creates an order with its items in one request.
+        Server computes subtotal, tax, and total from service prices + tax config.
+        Commission records are auto-created server-side per order item.
+      operationId: createOrder
+      tags: [Orders]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /orders/summary:
+    get:
+      summary: Get order aggregates
+      description: >
+        Returns aggregate stats for the given date range:
+        total order count, total revenue, total commission paid out, and a
+        breakdown by payment method.
+      operationId: getOrderSummary
+      tags: [Orders]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/FromParam'
+        - $ref: '#/components/parameters/ToParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /orders/{id}:
+    get:
+      summary: Get order detail
+      operationId: getOrder
+      tags: [Orders]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ---------------------------------------------------------------------------
+  # WORKERS
+  # ---------------------------------------------------------------------------
+  /workers:
+    get:
+      summary: List workers
+      operationId: listWorkers
+      tags: [Workers]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Worker'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Create worker
+      operationId: createWorker
+      tags: [Workers]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkerRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Worker'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /workers/{id}:
+    get:
+      summary: Get worker by ID
+      operationId: getWorker
+      tags: [Workers]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Worker'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update worker
+      operationId: updateWorker
+      tags: [Workers]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkerRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Worker'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete worker
+      description: >
+        Hard delete only if worker has no associated order history.
+        Otherwise, deactivate via PUT with is_active: false.
+      operationId: deleteWorker
+      tags: [Workers]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: No Content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /workers/{id}/commissions/summary:
+    get:
+      summary: Get worker commission aggregates
+      description: >
+        Returns total commission earned by this worker for the given date range,
+        with a breakdown by service.
+      operationId: getWorkerCommissionSummary
+      tags: [Workers]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/FromParam'
+        - $ref: '#/components/parameters/ToParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkerCommissionSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ---------------------------------------------------------------------------
+  # SERVICES
+  # ---------------------------------------------------------------------------
+  /services:
+    get:
+      summary: List services
+      operationId: listServices
+      tags: [Services]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: category_id
+          in: query
+          schema:
+            type: integer
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Service'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Create service
+      operationId: createService
+      tags: [Services]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /services/{id}:
+    get:
+      summary: Get service by ID
+      operationId: getService
+      tags: [Services]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update service
+      operationId: updateService
+      tags: [Services]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete service
+      operationId: deleteService
+      tags: [Services]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: No Content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  # ---------------------------------------------------------------------------
+  # SERVICE CATEGORIES
+  # ---------------------------------------------------------------------------
+  /service-categories:
+    get:
+      summary: List service categories
+      operationId: listServiceCategories
+      tags: [Service Categories]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServiceCategory'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Create service category
+      operationId: createServiceCategory
+      tags: [Service Categories]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceCategoryRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceCategory'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /service-categories/{id}:
+    get:
+      summary: Get service category by ID
+      operationId: getServiceCategory
+      tags: [Service Categories]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceCategory'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update service category
+      operationId: updateServiceCategory
+      tags: [Service Categories]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceCategoryRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceCategory'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete service category
+      operationId: deleteServiceCategory
+      tags: [Service Categories]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: No Content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  # ---------------------------------------------------------------------------
+  # PAYMENT METHODS
+  # ---------------------------------------------------------------------------
+  /payment-methods:
+    get:
+      summary: List payment methods
+      operationId: listPaymentMethods
+      tags: [Payment Methods]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PaymentMethod'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Create payment method
+      operationId: createPaymentMethod
+      tags: [Payment Methods]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentMethodRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethod'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /payment-methods/{id}:
+    get:
+      summary: Get payment method by ID
+      operationId: getPaymentMethod
+      tags: [Payment Methods]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethod'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update payment method
+      operationId: updatePaymentMethod
+      tags: [Payment Methods]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentMethodRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethod'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete payment method
+      operationId: deletePaymentMethod
+      tags: [Payment Methods]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: No Content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  # ---------------------------------------------------------------------------
+  # REPORTS
+  # ---------------------------------------------------------------------------
+  /reports/orders:
+    get:
+      summary: Download order report
+      description: >
+        Returns a CSV file containing order history with details suitable for
+        UMKM bookkeeping: order date, customer name, services rendered, worker,
+        subtotal, discount, tax, total, payment method, and commission per item.
+        Filter by date range via `from` and `to`.
+      operationId: downloadOrderReport
+      tags: [Reports]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/FromParam'
+        - $ref: '#/components/parameters/ToParam'
+      responses:
+        '200':
+          description: CSV file download
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: attachment; filename="orders_2024-01.csv"
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+# =============================================================================
+# COMPONENTS
+# =============================================================================
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+        maximum: 100
+
+    FromParam:
+      name: from
+      in: query
+      description: Start date (inclusive), format YYYY-MM-DD
+      schema:
+        type: string
+        format: date
+
+    ToParam:
+      name: to
+      in: query
+      description: End date (inclusive), format YYYY-MM-DD
+      schema:
+        type: string
+        format: date
+
+  responses:
+    BadRequest:
+      description: Bad request — invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Conflict:
+      description: >
+        Conflict — e.g. cannot delete a worker/service that has existing order history.
+        Deactivate instead.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    UnprocessableEntity:
+      description: Unprocessable entity — e.g. inactive service or worker in order
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+
+    # -------------------------------------------------------------------------
+    # COMMON
+    # -------------------------------------------------------------------------
+    Timestamps:
+      type: object
+      properties:
+        created_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_by:
+          type: string
+          nullable: true
+
+    PaginatedResponse:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+
+    # -------------------------------------------------------------------------
+    # AUTH
+    # -------------------------------------------------------------------------
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_in:
+          type: integer
+          description: Access token TTL in seconds
+
+    # -------------------------------------------------------------------------
+    # ORDERS
+    # -------------------------------------------------------------------------
+    Order:
+      allOf:
+        - $ref: '#/components/schemas/Timestamps'
+        - type: object
+          required: [id, customer_name, subtotal, tax, tax_percentage, discount, total, payment_method_id]
+          properties:
+            id:
+              type: integer
+            customer_name:
+              type: string
+            subtotal:
+              type: number
+              format: double
+            tax:
+              type: number
+              format: double
+            tax_percentage:
+              type: number
+              format: double
+            discount:
+              type: number
+              format: double
+            total:
+              type: number
+              format: double
+            payment_method_id:
+              type: integer
+            payment_method_name:
+              type: string
+
+    OrderDetail:
+      allOf:
+        - $ref: '#/components/schemas/Order'
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/OrderItem'
+
+    OrderItem:
+      allOf:
+        - $ref: '#/components/schemas/Timestamps'
+        - type: object
+          required: [id, service_id, service_name, worker_id, worker_name, service_price, commission_fee]
+          properties:
+            id:
+              type: integer
+            service_id:
+              type: integer
+            service_name:
+              type: string
+            worker_id:
+              type: integer
+            worker_name:
+              type: string
+            service_price:
+              type: number
+              format: double
+            commission_fee:
+              type: number
+              format: double
+
+    OrderSummary:
+      type: object
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        order_count:
+          type: integer
+        total_revenue:
+          type: number
+          format: double
+        total_discount:
+          type: number
+          format: double
+        total_tax:
+          type: number
+          format: double
+        total_commission:
+          type: number
+          format: double
+        by_payment_method:
+          type: array
+          items:
+            type: object
+            properties:
+              payment_method_id:
+                type: integer
+              payment_method_name:
+                type: string
+              order_count:
+                type: integer
+              total_revenue:
+                type: number
+                format: double
+
+    CreateOrderRequest:
+      type: object
+      required: [customer_name, payment_method_id, items]
+      properties:
+        customer_name:
+          type: string
+        payment_method_id:
+          type: integer
+        discount:
+          type: number
+          format: double
+          default: 0
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [service_id, worker_id]
+            properties:
+              service_id:
+                type: integer
+              worker_id:
+                type: integer
+
+    # -------------------------------------------------------------------------
+    # WORKERS
+    # -------------------------------------------------------------------------
+    Worker:
+      allOf:
+        - $ref: '#/components/schemas/Timestamps'
+        - type: object
+          required: [id, name, is_active]
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            is_active:
+              type: boolean
+
+    WorkerRequest:
+      type: object
+      required: [name, is_active]
+      properties:
+        name:
+          type: string
+        is_active:
+          type: boolean
+
+    WorkerCommissionSummary:
+      type: object
+      properties:
+        worker_id:
+          type: integer
+        worker_name:
+          type: string
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        total_commission:
+          type: number
+          format: double
+        order_count:
+          type: integer
+        by_service:
+          type: array
+          items:
+            type: object
+            properties:
+              service_id:
+                type: integer
+              service_name:
+                type: string
+              count:
+                type: integer
+              total_commission:
+                type: number
+                format: double
+
+    # -------------------------------------------------------------------------
+    # SERVICES
+    # -------------------------------------------------------------------------
+    Service:
+      allOf:
+        - $ref: '#/components/schemas/Timestamps'
+        - type: object
+          required: [id, name, price, category_id, is_active]
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            price:
+              type: number
+              format: double
+            category_id:
+              type: integer
+            category_name:
+              type: string
+            is_active:
+              type: boolean
+
+    ServiceRequest:
+      type: object
+      required: [name, price, category_id, is_active]
+      properties:
+        name:
+          type: string
+        price:
+          type: number
+          format: double
+        category_id:
+          type: integer
+        is_active:
+          type: boolean
+
+    # -------------------------------------------------------------------------
+    # SERVICE CATEGORIES
+    # -------------------------------------------------------------------------
+    ServiceCategory:
+      allOf:
+        - $ref: '#/components/schemas/Timestamps'
+        - type: object
+          required: [id, name, is_active]
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            is_active:
+              type: boolean
+
+    ServiceCategoryRequest:
+      type: object
+      required: [name, is_active]
+      properties:
+        name:
+          type: string
+        is_active:
+          type: boolean
+
+    # -------------------------------------------------------------------------
+    # PAYMENT METHODS
+    # -------------------------------------------------------------------------
+    PaymentMethod:
+      allOf:
+        - $ref: '#/components/schemas/Timestamps'
+        - type: object
+          required: [id, name, is_active]
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            is_active:
+              type: boolean
+
+    PaymentMethodRequest:
+      type: object
+      required: [name, is_active]
+      properties:
+        name:
+          type: string
+        is_active:
+          type: boolean
