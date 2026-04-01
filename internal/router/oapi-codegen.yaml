@@ -2,4 +2,4 @@ package: router
 generate:
   chi-server: true
   models: true
-output: model/gen.go
+output: generated.go

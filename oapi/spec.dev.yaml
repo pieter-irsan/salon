@@ -1,10 +1,10 @@
 # ref: learn.openapis.org/specification
 openapi: "3.0.0"
 info:
-  version: 1.0.0
+  version: 0.1.0
   title: Salon Cashier API
 servers:
-  - url: http://salon.astrono.my.id/api/v1
+  - url: http://salon.astrono.my.id/api/dev
 
 tags:
   - name: Auth
@@ -17,11 +17,7 @@ tags:
 
 paths:
 
-  # ---------------------------------------------------------------------------
-  # AUTH
-  # Assumption: single-owner app, simple JWT login. No registration endpoint —
-  # owner account is seeded manually.
-  # ---------------------------------------------------------------------------
+  # auth
   /auth/login:
     post:
       summary: Owner login
@@ -54,9 +50,9 @@ paths:
           application/json:
             schema:
               type: object
-              required: [refresh_token]
+              required: [refreshToken]
               properties:
-                refresh_token:
+                refreshToken:
                   type: string
       responses:
         '200':
@@ -68,9 +64,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  # ---------------------------------------------------------------------------
-  # ORDERS
-  # ---------------------------------------------------------------------------
+  # orders
   /orders:
     get:
       summary: List orders
@@ -178,9 +172,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  # ---------------------------------------------------------------------------
-  # WORKERS
-  # ---------------------------------------------------------------------------
+  # workers
   /workers:
     get:
       summary: List workers
@@ -189,7 +181,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: is_active
+        - name: isActive
           in: query
           schema:
             type: boolean
@@ -285,8 +277,6 @@ paths:
       summary: Delete worker
       description: >
         Hard delete only if worker has no associated order history.
-        Otherwise, deactivate via PUT with is_active: false.
-      operationId: deleteWorker
       tags: [Workers]
       security:
         - bearerAuth: []
@@ -328,9 +318,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  # ---------------------------------------------------------------------------
-  # SERVICES
-  # ---------------------------------------------------------------------------
+  # services
   /services:
     get:
       summary: List services
@@ -339,11 +327,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: category_id
+        - name: categoryId
           in: query
           schema:
             type: integer
-        - name: is_active
+        - name: isActive
           in: query
           schema:
             type: boolean
@@ -453,9 +441,7 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
-  # ---------------------------------------------------------------------------
-  # SERVICE CATEGORIES
-  # ---------------------------------------------------------------------------
+  # service categories
   /service-categories:
     get:
       summary: List service categories
@@ -464,7 +450,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: is_active
+        - name: isActive
           in: query
           schema:
             type: boolean
@@ -574,9 +560,7 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
-  # ---------------------------------------------------------------------------
-  # PAYMENT METHODS
-  # ---------------------------------------------------------------------------
+  # payment methods
   /payment-methods:
     get:
       summary: List payment methods
@@ -585,7 +569,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: is_active
+        - name: isActive
           in: query
           schema:
             type: boolean
@@ -695,9 +679,7 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
-  # ---------------------------------------------------------------------------
-  # REPORTS
-  # ---------------------------------------------------------------------------
+  # reports
   /reports/orders:
     get:
       summary: Download order report
@@ -720,7 +702,7 @@ paths:
             Content-Disposition:
               schema:
                 type: string
-                example: attachment; filename="orders_2024-01.csv"
+                example: attachment; filename="orders2024-01.csv"
           content:
             text/csv:
               schema:
@@ -729,9 +711,6 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-# =============================================================================
-# COMPONENTS
-# =============================================================================
 components:
   securitySchemes:
     bearerAuth:
@@ -819,25 +798,6 @@ components:
 
   schemas:
 
-    # -------------------------------------------------------------------------
-    # COMMON
-    # -------------------------------------------------------------------------
-    Timestamps:
-      type: object
-      properties:
-        created_at:
-          type: string
-          format: date-time
-        created_by:
-          type: string
-        updated_at:
-          type: string
-          format: date-time
-          nullable: true
-        updated_by:
-          type: string
-          nullable: true
-
     PaginatedResponse:
       type: object
       properties:
@@ -855,9 +815,7 @@ components:
         message:
           type: string
 
-    # -------------------------------------------------------------------------
-    # AUTH
-    # -------------------------------------------------------------------------
+    # auth
     LoginRequest:
       type: object
       required: [username, password]
@@ -870,46 +828,45 @@ components:
     LoginResponse:
       type: object
       properties:
-        access_token:
+        accessToken:
           type: string
-        refresh_token:
+        refreshToken:
           type: string
-        expires_in:
+        expiresIn:
           type: integer
           description: Access token TTL in seconds
 
-    # -------------------------------------------------------------------------
-    # ORDERS
-    # -------------------------------------------------------------------------
+    # orders
     Order:
-      allOf:
-        - $ref: '#/components/schemas/Timestamps'
-        - type: object
-          required: [id, customer_name, subtotal, tax, tax_percentage, discount, total, payment_method_id]
-          properties:
-            id:
-              type: integer
-            customer_name:
-              type: string
-            subtotal:
-              type: number
-              format: double
-            tax:
-              type: number
-              format: double
-            tax_percentage:
-              type: number
-              format: double
-            discount:
-              type: number
-              format: double
-            total:
-              type: number
-              format: double
-            payment_method_id:
-              type: integer
-            payment_method_name:
-              type: string
+      type: object
+      required: [id, customerName, subtotal, tax, taxPercentage, discount, total, paymentMethodId]
+      properties:
+        id:
+          type: integer
+        customerName:
+          type: string
+        subtotal:
+          type: number
+          format: double
+        tax:
+          type: number
+          format: double
+        taxPercentage:
+          type: number
+          format: double
+        discount:
+          type: number
+          format: double
+        total:
+          type: number
+          format: double
+        paymentMethodId:
+          type: integer
+        paymentMethodName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
 
     OrderDetail:
       allOf:
@@ -922,27 +879,28 @@ components:
                 $ref: '#/components/schemas/OrderItem'
 
     OrderItem:
-      allOf:
-        - $ref: '#/components/schemas/Timestamps'
-        - type: object
-          required: [id, service_id, service_name, worker_id, worker_name, service_price, commission_fee]
-          properties:
-            id:
-              type: integer
-            service_id:
-              type: integer
-            service_name:
-              type: string
-            worker_id:
-              type: integer
-            worker_name:
-              type: string
-            service_price:
-              type: number
-              format: double
-            commission_fee:
-              type: number
-              format: double
+      type: object
+      required: [id, serviceId, serviceName, workerId, workerName, servicePrice, commissionFee]
+      properties:
+        id:
+          type: integer
+        serviceId:
+          type: integer
+        serviceName:
+          type: string
+        workerId:
+          type: integer
+        workerName:
+          type: string
+        servicePrice:
+          type: number
+          format: double
+        commissionFee:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
 
     OrderSummary:
       type: object
@@ -953,42 +911,42 @@ components:
         to:
           type: string
           format: date
-        order_count:
+        orderCount:
           type: integer
-        total_revenue:
+        totalRevenue:
           type: number
           format: double
-        total_discount:
+        totalDiscount:
           type: number
           format: double
-        total_tax:
+        totalTax:
           type: number
           format: double
-        total_commission:
+        totalCommission:
           type: number
           format: double
-        by_payment_method:
+        byPaymentMethod:
           type: array
           items:
             type: object
             properties:
-              payment_method_id:
+              paymentMethodId:
                 type: integer
-              payment_method_name:
+              paymentMethodName:
                 type: string
-              order_count:
+              orderCount:
                 type: integer
-              total_revenue:
+              totalRevenue:
                 type: number
                 format: double
 
     CreateOrderRequest:
       type: object
-      required: [customer_name, payment_method_id, items]
+      required: [customerName, paymentMethodId, items]
       properties:
-        customer_name:
+        customerName:
           type: string
-        payment_method_id:
+        paymentMethodId:
           type: integer
         discount:
           type: number
@@ -999,44 +957,39 @@ components:
           minItems: 1
           items:
             type: object
-            required: [service_id, worker_id]
+            required: [serviceId, workerId]
             properties:
-              service_id:
+              serviceId:
                 type: integer
-              worker_id:
+              workerId:
                 type: integer
 
-    # -------------------------------------------------------------------------
-    # WORKERS
-    # -------------------------------------------------------------------------
+    # workers
     Worker:
-      allOf:
-        - $ref: '#/components/schemas/Timestamps'
-        - type: object
-          required: [id, name, is_active]
-          properties:
-            id:
-              type: integer
-            name:
-              type: string
-            is_active:
-              type: boolean
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
 
     WorkerRequest:
       type: object
-      required: [name, is_active]
+      required: [name]
       properties:
         name:
           type: string
-        is_active:
-          type: boolean
 
     WorkerCommissionSummary:
       type: object
       properties:
-        worker_id:
+        workerId:
           type: integer
-        worker_name:
+        workerName:
           type: string
         from:
           type: string
@@ -1044,109 +997,85 @@ components:
         to:
           type: string
           format: date
-        total_commission:
+        totalCommission:
           type: number
           format: double
-        order_count:
+        orderCount:
           type: integer
-        by_service:
+        byService:
           type: array
           items:
             type: object
             properties:
-              service_id:
+              serviceId:
                 type: integer
-              service_name:
+              serviceName:
                 type: string
               count:
                 type: integer
-              total_commission:
+              totalCommission:
                 type: number
                 format: double
 
-    # -------------------------------------------------------------------------
-    # SERVICES
-    # -------------------------------------------------------------------------
+    # services
     Service:
-      allOf:
-        - $ref: '#/components/schemas/Timestamps'
-        - type: object
-          required: [id, name, price, category_id, is_active]
-          properties:
-            id:
-              type: integer
-            name:
-              type: string
-            price:
-              type: number
-              format: double
-            category_id:
-              type: integer
-            category_name:
-              type: string
-            is_active:
-              type: boolean
+      type: object
+      required: [id, name, price, categoryId]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        price:
+          type: number
+          format: double
+        categoryId:
+          type: integer
+        categoryName:
+          type: string
 
     ServiceRequest:
       type: object
-      required: [name, price, category_id, is_active]
+      required: [name, price, categoryId]
       properties:
         name:
           type: string
         price:
           type: number
           format: double
-        category_id:
+        categoryId:
           type: integer
-        is_active:
-          type: boolean
 
-    # -------------------------------------------------------------------------
-    # SERVICE CATEGORIES
-    # -------------------------------------------------------------------------
+    # service categories
     ServiceCategory:
-      allOf:
-        - $ref: '#/components/schemas/Timestamps'
-        - type: object
-          required: [id, name, is_active]
-          properties:
-            id:
-              type: integer
-            name:
-              type: string
-            is_active:
-              type: boolean
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
 
     ServiceCategoryRequest:
       type: object
-      required: [name, is_active]
+      required: [name]
       properties:
         name:
           type: string
-        is_active:
-          type: boolean
 
-    # -------------------------------------------------------------------------
-    # PAYMENT METHODS
-    # -------------------------------------------------------------------------
+    # payment methods
     PaymentMethod:
-      allOf:
-        - $ref: '#/components/schemas/Timestamps'
-        - type: object
-          required: [id, name, is_active]
-          properties:
-            id:
-              type: integer
-            name:
-              type: string
-            is_active:
-              type: boolean
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
 
     PaymentMethodRequest:
       type: object
-      required: [name, is_active]
+      required: [name]
       properties:
         name:
           type: string
-        is_active:
-          type: boolean

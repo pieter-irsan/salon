@@ -1,21 +1,31 @@
 package main
 
+import (
+	"salon/internal/config"
+	"salon/internal/db"
+	"salon/internal/handler"
+	"salon/internal/logger"
+	"salon/internal/repo"
+	"salon/internal/router"
+	"salon/internal/service"
+)
+
 func main() {
-	// init config
+	c := config.New()
 
-	// init logger
+	l := logger.New(c.Env)
 
-	// init db
+	d := db.New(c.SalonDsn)
 
-	// init repo
+	r := repo.New(d)
 
-	// init service
+	s := service.New(r)
 
-	// init handler
+	h := handler.New(s)
 
-	// init router
+	server := router.New(c.Port, h)
 
 	// init cancellation ctx
 
-	// run router
+	server.ListenAndServe()
 }
