@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	BearerAuthScopes = "bearerAuth.Scopes"
+	ApiKeyScopes = "apiKey.Scopes"
 )
 
 // CreateOrderRequest defines model for CreateOrderRequest.
@@ -34,38 +34,23 @@ type Error struct {
 	Message string `json:"message"`
 }
 
-// LoginRequest defines model for LoginRequest.
-type LoginRequest struct {
-	Password string `json:"password"`
-	Username string `json:"username"`
-}
-
-// LoginResponse defines model for LoginResponse.
-type LoginResponse struct {
-	AccessToken *string `json:"accessToken,omitempty"`
-
-	// ExpiresIn Access token TTL in seconds
-	ExpiresIn    *int    `json:"expiresIn,omitempty"`
-	RefreshToken *string `json:"refreshToken,omitempty"`
-}
-
 // Order defines model for Order.
 type Order struct {
-	CreatedAt         *time.Time `json:"createdAt,omitempty"`
-	CustomerName      string     `json:"customerName"`
-	Discount          float64    `json:"discount"`
-	Id                int        `json:"id"`
-	PaymentMethodId   int        `json:"paymentMethodId"`
-	PaymentMethodName *string    `json:"paymentMethodName,omitempty"`
-	Subtotal          float64    `json:"subtotal"`
-	Tax               float64    `json:"tax"`
-	TaxPercentage     float64    `json:"taxPercentage"`
-	Total             float64    `json:"total"`
+	CreatedAt         time.Time `json:"createdAt"`
+	CustomerName      string    `json:"customerName"`
+	Discount          float64   `json:"discount"`
+	Id                int       `json:"id"`
+	PaymentMethodId   int       `json:"paymentMethodId"`
+	PaymentMethodName *string   `json:"paymentMethodName,omitempty"`
+	Subtotal          float64   `json:"subtotal"`
+	Tax               float64   `json:"tax"`
+	TaxPercentage     float64   `json:"taxPercentage"`
+	Total             float64   `json:"total"`
 }
 
 // OrderDetail defines model for OrderDetail.
 type OrderDetail struct {
-	CreatedAt         *time.Time   `json:"createdAt,omitempty"`
+	CreatedAt         time.Time    `json:"createdAt"`
 	CustomerName      string       `json:"customerName"`
 	Discount          float64      `json:"discount"`
 	Id                int          `json:"id"`
@@ -80,14 +65,14 @@ type OrderDetail struct {
 
 // OrderItem defines model for OrderItem.
 type OrderItem struct {
-	CommissionFee float64    `json:"commissionFee"`
-	CreatedAt     *time.Time `json:"createdAt,omitempty"`
-	Id            int        `json:"id"`
-	ServiceId     int        `json:"serviceId"`
-	ServiceName   string     `json:"serviceName"`
-	ServicePrice  float64    `json:"servicePrice"`
-	WorkerId      int        `json:"workerId"`
-	WorkerName    string     `json:"workerName"`
+	CommissionFee float64   `json:"commissionFee"`
+	CreatedAt     time.Time `json:"createdAt"`
+	Id            int       `json:"id"`
+	ServiceId     int       `json:"serviceId"`
+	ServiceName   string    `json:"serviceName"`
+	ServicePrice  float64   `json:"servicePrice"`
+	WorkerId      int       `json:"workerId"`
+	WorkerName    string    `json:"workerName"`
 }
 
 // OrderSummary defines model for OrderSummary.
@@ -154,9 +139,9 @@ type ServiceRequest struct {
 
 // Worker defines model for Worker.
 type Worker struct {
-	CreatedAt *time.Time `json:"createdAt,omitempty"`
-	Id        int        `json:"id"`
-	Name      string     `json:"name"`
+	CreatedAt time.Time `json:"createdAt"`
+	Id        int       `json:"id"`
+	Name      string    `json:"name"`
 }
 
 // WorkerCommissionSummary defines model for WorkerCommissionSummary.
@@ -204,16 +189,8 @@ type Conflict = Error
 // NotFound defines model for NotFound.
 type NotFound = Error
 
-// Unauthorized defines model for Unauthorized.
-type Unauthorized = Error
-
 // UnprocessableEntity defines model for UnprocessableEntity.
 type UnprocessableEntity = Error
-
-// RefreshTokenJSONBody defines parameters for RefreshToken.
-type RefreshTokenJSONBody struct {
-	RefreshToken string `json:"refreshToken"`
-}
 
 // ListOrdersParams defines parameters for ListOrders.
 type ListOrdersParams struct {
@@ -275,12 +252,6 @@ type GetWorkerCommissionSummaryParams struct {
 	To *ToParam `form:"to,omitempty" json:"to,omitempty"`
 }
 
-// LoginJSONRequestBody defines body for Login for application/json ContentType.
-type LoginJSONRequestBody = LoginRequest
-
-// RefreshTokenJSONRequestBody defines body for RefreshToken for application/json ContentType.
-type RefreshTokenJSONRequestBody RefreshTokenJSONBody
-
 // CreateOrderJSONRequestBody defines body for CreateOrder for application/json ContentType.
 type CreateOrderJSONRequestBody = CreateOrderRequest
 
@@ -310,12 +281,6 @@ type UpdateWorkerJSONRequestBody = WorkerRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// Owner login
-	// (POST /auth/login)
-	Login(w http.ResponseWriter, r *http.Request)
-	// Refresh access token
-	// (POST /auth/refresh)
-	RefreshToken(w http.ResponseWriter, r *http.Request)
 	// List orders
 	// (GET /orders)
 	ListOrders(w http.ResponseWriter, r *http.Request, params ListOrdersParams)
@@ -384,7 +349,7 @@ type ServerInterface interface {
 	CreateWorker(w http.ResponseWriter, r *http.Request)
 	// Delete worker
 	// (DELETE /workers/{id})
-	DeleteWorkersId(w http.ResponseWriter, r *http.Request, id IdParam)
+	DeleteWorker(w http.ResponseWriter, r *http.Request, id IdParam)
 	// Get worker by ID
 	// (GET /workers/{id})
 	GetWorker(w http.ResponseWriter, r *http.Request, id IdParam)
@@ -399,18 +364,6 @@ type ServerInterface interface {
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
 
 type Unimplemented struct{}
-
-// Owner login
-// (POST /auth/login)
-func (_ Unimplemented) Login(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Refresh access token
-// (POST /auth/refresh)
-func (_ Unimplemented) RefreshToken(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
 
 // List orders
 // (GET /orders)
@@ -546,7 +499,7 @@ func (_ Unimplemented) CreateWorker(w http.ResponseWriter, r *http.Request) {
 
 // Delete worker
 // (DELETE /workers/{id})
-func (_ Unimplemented) DeleteWorkersId(w http.ResponseWriter, r *http.Request, id IdParam) {
+func (_ Unimplemented) DeleteWorker(w http.ResponseWriter, r *http.Request, id IdParam) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -577,34 +530,6 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
-// Login operation middleware
-func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Login(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// RefreshToken operation middleware
-func (siw *ServerInterfaceWrapper) RefreshToken(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RefreshToken(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // ListOrders operation middleware
 func (siw *ServerInterfaceWrapper) ListOrders(w http.ResponseWriter, r *http.Request) {
 
@@ -612,7 +537,7 @@ func (siw *ServerInterfaceWrapper) ListOrders(w http.ResponseWriter, r *http.Req
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -667,7 +592,7 @@ func (siw *ServerInterfaceWrapper) CreateOrder(w http.ResponseWriter, r *http.Re
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -689,7 +614,7 @@ func (siw *ServerInterfaceWrapper) GetOrderSummary(w http.ResponseWriter, r *htt
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -739,7 +664,7 @@ func (siw *ServerInterfaceWrapper) GetOrder(w http.ResponseWriter, r *http.Reque
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -761,7 +686,7 @@ func (siw *ServerInterfaceWrapper) ListPaymentMethods(w http.ResponseWriter, r *
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -792,7 +717,7 @@ func (siw *ServerInterfaceWrapper) CreatePaymentMethod(w http.ResponseWriter, r 
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -823,7 +748,7 @@ func (siw *ServerInterfaceWrapper) DeletePaymentMethod(w http.ResponseWriter, r 
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -854,7 +779,7 @@ func (siw *ServerInterfaceWrapper) GetPaymentMethod(w http.ResponseWriter, r *ht
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -885,7 +810,7 @@ func (siw *ServerInterfaceWrapper) UpdatePaymentMethod(w http.ResponseWriter, r 
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -907,7 +832,7 @@ func (siw *ServerInterfaceWrapper) DownloadOrderReport(w http.ResponseWriter, r 
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -948,7 +873,7 @@ func (siw *ServerInterfaceWrapper) ListServiceCategories(w http.ResponseWriter, 
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -979,7 +904,7 @@ func (siw *ServerInterfaceWrapper) CreateServiceCategory(w http.ResponseWriter, 
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -1010,7 +935,7 @@ func (siw *ServerInterfaceWrapper) DeleteServiceCategory(w http.ResponseWriter, 
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -1041,7 +966,7 @@ func (siw *ServerInterfaceWrapper) GetServiceCategory(w http.ResponseWriter, r *
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -1072,7 +997,7 @@ func (siw *ServerInterfaceWrapper) UpdateServiceCategory(w http.ResponseWriter, 
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -1094,7 +1019,7 @@ func (siw *ServerInterfaceWrapper) ListServices(w http.ResponseWriter, r *http.R
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -1133,7 +1058,7 @@ func (siw *ServerInterfaceWrapper) CreateService(w http.ResponseWriter, r *http.
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -1164,7 +1089,7 @@ func (siw *ServerInterfaceWrapper) DeleteService(w http.ResponseWriter, r *http.
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -1195,7 +1120,7 @@ func (siw *ServerInterfaceWrapper) GetService(w http.ResponseWriter, r *http.Req
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -1226,7 +1151,7 @@ func (siw *ServerInterfaceWrapper) UpdateService(w http.ResponseWriter, r *http.
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -1248,7 +1173,7 @@ func (siw *ServerInterfaceWrapper) ListWorkers(w http.ResponseWriter, r *http.Re
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -1279,7 +1204,7 @@ func (siw *ServerInterfaceWrapper) CreateWorker(w http.ResponseWriter, r *http.R
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -1294,8 +1219,8 @@ func (siw *ServerInterfaceWrapper) CreateWorker(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
-// DeleteWorkersId operation middleware
-func (siw *ServerInterfaceWrapper) DeleteWorkersId(w http.ResponseWriter, r *http.Request) {
+// DeleteWorker operation middleware
+func (siw *ServerInterfaceWrapper) DeleteWorker(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
@@ -1310,12 +1235,12 @@ func (siw *ServerInterfaceWrapper) DeleteWorkersId(w http.ResponseWriter, r *htt
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteWorkersId(w, r, id)
+		siw.Handler.DeleteWorker(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1341,7 +1266,7 @@ func (siw *ServerInterfaceWrapper) GetWorker(w http.ResponseWriter, r *http.Requ
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -1372,7 +1297,7 @@ func (siw *ServerInterfaceWrapper) UpdateWorker(w http.ResponseWriter, r *http.R
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -1403,7 +1328,7 @@ func (siw *ServerInterfaceWrapper) GetWorkerCommissionSummary(w http.ResponseWri
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+	ctx = context.WithValue(ctx, ApiKeyScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -1551,12 +1476,6 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/auth/login", wrapper.Login)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/auth/refresh", wrapper.RefreshToken)
-	})
-	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/orders", wrapper.ListOrders)
 	})
 	r.Group(func(r chi.Router) {
@@ -1623,7 +1542,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/workers", wrapper.CreateWorker)
 	})
 	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/workers/{id}", wrapper.DeleteWorkersId)
+		r.Delete(options.BaseURL+"/workers/{id}", wrapper.DeleteWorker)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workers/{id}", wrapper.GetWorker)

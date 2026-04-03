@@ -6,94 +6,62 @@ import (
 	"salon/internal/service"
 )
 
-type Handler struct {
+func New(service *service.Service) *handler {
+	return &handler{service: service}
+}
+
+type handler struct {
 	service *service.Service
 }
 
-func New(service *service.Service) *Handler {
-	return &Handler{service: service}
-}
+func (h *handler) ListOrders(w http.ResponseWriter, r *http.Request, params router.ListOrdersParams)
 
-// POST /auth/login
-func (h *Handler) Login(w http.ResponseWriter, r *http.Request)
+func (h *handler) CreateOrder(w http.ResponseWriter, r *http.Request)
 
-// POST /auth/refresh
-func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request)
+func (h *handler) GetOrderSummary(w http.ResponseWriter, r *http.Request, params router.GetOrderSummaryParams)
 
-// GET /orders
-func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request, params router.ListOrdersParams)
+func (h *handler) GetOrder(w http.ResponseWriter, r *http.Request, id router.IdParam)
 
-// POST /orders
-func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request)
+func (h *handler) ListPaymentMethods(w http.ResponseWriter, r *http.Request, params router.ListPaymentMethodsParams)
 
-// GET /orders/summary
-func (h *Handler) GetOrderSummary(w http.ResponseWriter, r *http.Request, params router.GetOrderSummaryParams)
+func (h *handler) CreatePaymentMethod(w http.ResponseWriter, r *http.Request)
 
-// GET /orders/{id}
-func (h *Handler) GetOrder(w http.ResponseWriter, r *http.Request, id router.IdParam)
+func (h *handler) DeletePaymentMethod(w http.ResponseWriter, r *http.Request, id router.IdParam)
 
-// GET /payment-methods
-func (h *Handler) ListPaymentMethods(w http.ResponseWriter, r *http.Request, params router.ListPaymentMethodsParams)
+func (h *handler) GetPaymentMethod(w http.ResponseWriter, r *http.Request, id router.IdParam)
 
-// POST /payment-methods
-func (h *Handler) CreatePaymentMethod(w http.ResponseWriter, r *http.Request)
+func (h *handler) UpdatePaymentMethod(w http.ResponseWriter, r *http.Request, id router.IdParam)
 
-// DELETE /payment-methods/{id}
-func (h *Handler) DeletePaymentMethod(w http.ResponseWriter, r *http.Request, id router.IdParam)
+func (h *handler) DownloadOrderReport(w http.ResponseWriter, r *http.Request, params router.DownloadOrderReportParams)
 
-// GET /payment-methods/{id}
-func (h *Handler) GetPaymentMethod(w http.ResponseWriter, r *http.Request, id router.IdParam)
+func (h *handler) ListServiceCategories(w http.ResponseWriter, r *http.Request, params router.ListServiceCategoriesParams)
 
-// PUT /payment-methods/{id}
-func (h *Handler) UpdatePaymentMethod(w http.ResponseWriter, r *http.Request, id router.IdParam)
+func (h *handler) CreateServiceCategory(w http.ResponseWriter, r *http.Request)
 
-// GET /reports/orders
-func (h *Handler) DownloadOrderReport(w http.ResponseWriter, r *http.Request, params router.DownloadOrderReportParams)
+func (h *handler) DeleteServiceCategory(w http.ResponseWriter, r *http.Request, id router.IdParam)
 
-// GET /service-categories
-func (h *Handler) ListServiceCategories(w http.ResponseWriter, r *http.Request, params router.ListServiceCategoriesParams)
+func (h *handler) GetServiceCategory(w http.ResponseWriter, r *http.Request, id router.IdParam)
 
-// POST /service-categories
-func (h *Handler) CreateServiceCategory(w http.ResponseWriter, r *http.Request)
+func (h *handler) UpdateServiceCategory(w http.ResponseWriter, r *http.Request, id router.IdParam)
 
-// DELETE /service-categories/{id}
-func (h *Handler) DeleteServiceCategory(w http.ResponseWriter, r *http.Request, id router.IdParam)
+func (h *handler) ListServices(w http.ResponseWriter, r *http.Request, params router.ListServicesParams)
 
-// GET /service-categories/{id}
-func (h *Handler) GetServiceCategory(w http.ResponseWriter, r *http.Request, id router.IdParam)
+func (h *handler) CreateService(w http.ResponseWriter, r *http.Request)
 
-// PUT /service-categories/{id}
-func (h *Handler) UpdateServiceCategory(w http.ResponseWriter, r *http.Request, id router.IdParam)
+func (h *handler) DeleteService(w http.ResponseWriter, r *http.Request, id router.IdParam)
 
-// GET /services
-func (h *Handler) ListServices(w http.ResponseWriter, r *http.Request, params router.ListServicesParams)
+func (h *handler) GetService(w http.ResponseWriter, r *http.Request, id router.IdParam)
 
-// POST /services
-func (h *Handler) CreateService(w http.ResponseWriter, r *http.Request)
+func (h *handler) UpdateService(w http.ResponseWriter, r *http.Request, id router.IdParam)
 
-// DELETE /services/{id}
-func (h *Handler) DeleteService(w http.ResponseWriter, r *http.Request, id router.IdParam)
+func (h *handler) ListWorkers(w http.ResponseWriter, r *http.Request, params router.ListWorkersParams)
 
-// GET /services/{id}
-func (h *Handler) GetService(w http.ResponseWriter, r *http.Request, id router.IdParam)
+func (h *handler) CreateWorker(w http.ResponseWriter, r *http.Request)
 
-// PUT /services/{id}
-func (h *Handler) UpdateService(w http.ResponseWriter, r *http.Request, id router.IdParam)
+func (h *handler) DeleteWorker(w http.ResponseWriter, r *http.Request, id router.IdParam)
 
-// GET /workers
-func (h *Handler) ListWorkers(w http.ResponseWriter, r *http.Request, params router.ListWorkersParams)
+func (h *handler) GetWorker(w http.ResponseWriter, r *http.Request, id router.IdParam)
 
-// POST /workers
-func (h *Handler) CreateWorker(w http.ResponseWriter, r *http.Request)
+func (h *handler) UpdateWorker(w http.ResponseWriter, r *http.Request, id router.IdParam)
 
-// DELETE /workers/{id}
-func (h *Handler) DeleteWorkersId(w http.ResponseWriter, r *http.Request, id router.IdParam)
-
-// GET /workers/{id}
-func (h *Handler) GetWorker(w http.ResponseWriter, r *http.Request, id router.IdParam)
-
-// PUT /workers/{id}
-func (h *Handler) UpdateWorker(w http.ResponseWriter, r *http.Request, id router.IdParam)
-
-// GET /workers/{id}/commissions/summary
-func (h *Handler) GetWorkerCommissionSummary(w http.ResponseWriter, r *http.Request, id router.IdParam, params router.GetWorkerCommissionSummaryParams)
+func (h *handler) GetWorkerCommissionSummary(w http.ResponseWriter, r *http.Request, id router.IdParam, params router.GetWorkerCommissionSummaryParams)
